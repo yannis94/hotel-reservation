@@ -9,6 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/yannis94/hotel-reservation/api"
+	customtypes "github.com/yannis94/hotel-reservation/custom_types"
 	"github.com/yannis94/hotel-reservation/db"
 )
 
@@ -17,6 +18,13 @@ var config = fiber.Config{
     ErrorHandler: func(ctx *fiber.Ctx, err error) error {
         return ctx.JSON(map[string]string{"error": err.Error()})
     },
+}
+
+func provDbSeed(c *mongo.Client) {
+    user := customtypes.User{ FirstName: "John", LastName: "Doe" }
+    if _, err := c.Database("hotel-reservation").Collection("users").InsertOne(context.Background(), user); err != nil {
+        panic(err)
+    }
 }
 
 func main() {
@@ -28,6 +36,9 @@ func main() {
         panic(err)
     }
 
+    //prov call
+    provDbSeed(client)
+
     userHandler := api.NewUserHandler(db.NewMongoUserStore(client))
 
     app := fiber.New(config)
@@ -37,6 +48,9 @@ func main() {
 
     apiv1.Get("/user", userHandler.HandleGetUsers)
     apiv1.Get("/user/:id", userHandler.HandleGetUserById)
+    apiv1.Post("/user", userHandler.HandlePostUser)
+    apiv1.Put("/user/:id", userHandler.HandlePutUser)
+    apiv1.Delete("/user/:id", userHandler.HandleDeleteUser)
     
     app.Listen(*listenAddr)
 }
