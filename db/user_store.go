@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 
 	customtypes "github.com/yannis94/hotel-reservation/custom_types"
 	"go.mongodb.org/mongo-driver/bson"
@@ -9,7 +10,13 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+type Dropper interface {
+    Drop(context.Context) error
+}
+
 type UserStore interface {
+    Dropper
+
     GetUserByID(context.Context, string) (*customtypes.User, error)
     GetUsers(context.Context) ([]*customtypes.User, error)
     InsertUser(context.Context, *customtypes.User) (*customtypes.User, error)
@@ -22,7 +29,7 @@ type MongoUserStore struct {
     coll *mongo.Collection
 }
 
-func NewMongoUserStore(client *mongo.Client) *MongoUserStore {
+func NewMongoUserStore(client *mongo.Client, dbName string) *MongoUserStore {
     return &MongoUserStore{
         client: client,
         coll: client.Database(dbName).Collection(userColl),
@@ -103,4 +110,9 @@ func (db *MongoUserStore) GetUsers(ctx context.Context) ([]*customtypes.User, er
     }
 
     return users, nil
+}
+
+func (db *MongoUserStore) Drop(ctx context.Context) error {
+    fmt.Println("---- Drop \"users\" collection ----")
+    return db.coll.Drop(ctx)
 }
