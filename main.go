@@ -12,8 +12,6 @@ import (
 	"github.com/yannis94/hotel-reservation/db"
 )
 
-const dbName = "hotel-reservation"
-
 var config = fiber.Config{
     // Override default error handler
     ErrorHandler: func(ctx *fiber.Ctx, err error) error {
@@ -30,11 +28,21 @@ func main() {
         panic(err)
     }
 
-    userHandler := api.NewUserHandler(db.NewMongoUserStore(client, dbName))
+    var (
+        hotelStore = db.NewMongoHotelStore(client)
+        roomStore = db.NewMongoRoomStore(client, hotelStore)
+        userStore = db.NewMongoUserStore(client)
+        store = &db.Store{
+            User: userStore,
+            Hotel: hotelStore,
+            Room: roomStore,
+        }
+        hotelHandler = api.NewHotelHandler(store)
+        userHandler = api.NewUserHandler(userStore)
+        app = fiber.New(config)
+        apiv1 = app.Group("/api/v1")
+    )
 
-    app := fiber.New(config)
-
-    apiv1 := app.Group("/api/v1")
 
 
     apiv1.Get("/user", userHandler.HandleGetUsers)
@@ -42,6 +50,10 @@ func main() {
     apiv1.Post("/user", userHandler.HandlePostUser)
     apiv1.Put("/user/:id", userHandler.HandlePutUser)
     apiv1.Delete("/user/:id", userHandler.HandleDeleteUser)
+
+    apiv1.Get("/hotel", hotelHandler.HandleGetHotels)
+    apiv1.Get("/hotel/:id", hotelHandler.HandleGetHotelByID)
+    apiv1.Get("/hotel/:id/rooms", hotelHandler.HandleGetRooms)
     
     app.Listen(*listenAddr)
 }
