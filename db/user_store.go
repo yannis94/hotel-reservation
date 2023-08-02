@@ -18,6 +18,7 @@ type UserStore interface {
     Dropper
 
     GetUserByID(context.Context, string) (*customtypes.User, error)
+    GetUserByEmail(context.Context, string) (*customtypes.User, error)
     GetUsers(context.Context) ([]*customtypes.User, error)
     InsertUser(context.Context, *customtypes.User) (*customtypes.User, error)
     UpdateUser(context.Context, bson.M, customtypes.UpdateUserParams) error
@@ -91,6 +92,16 @@ func (db *MongoUserStore) GetUserByID(ctx context.Context, id string) (*customty
     var user customtypes.User
 
     if err := db.coll.FindOne(ctx, bson.M{"_id": objectId}).Decode(&user); err != nil {
+        return nil, err
+    }
+
+    return &user, nil
+}
+
+func (db *MongoUserStore) GetUserByEmail(ctx context.Context, email string) (*customtypes.User, error) {
+    var user customtypes.User
+
+    if err := db.coll.FindOne(ctx, bson.M{"email": email}).Decode(&user); err != nil {
         return nil, err
     }
 

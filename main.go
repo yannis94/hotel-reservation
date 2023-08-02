@@ -9,6 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/yannis94/hotel-reservation/api"
+	"github.com/yannis94/hotel-reservation/api/middleware"
 	"github.com/yannis94/hotel-reservation/db"
 )
 
@@ -39,11 +40,14 @@ func main() {
         }
         hotelHandler = api.NewHotelHandler(store)
         userHandler = api.NewUserHandler(userStore)
+        authHandler = api.NewAuthHandler(userStore)
         app = fiber.New(config)
-        apiv1 = app.Group("/api/v1")
+        api = app.Group("/api")
+        apiv1 = app.Group("/api/v1", middleware.JWTAuthentication)
     )
 
 
+    api.Post("/auth", authHandler.HandleAuthenticate)
 
     apiv1.Get("/user", userHandler.HandleGetUsers)
     apiv1.Get("/user/:id", userHandler.HandleGetUserById)

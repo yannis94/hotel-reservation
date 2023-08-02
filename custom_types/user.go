@@ -92,3 +92,7 @@ func isEmailValid(email string) bool {
 	re := regexp.MustCompile(emailRegex)
 	return re.MatchString(email)
 }
+
+func IsPasswordValid(encrPwd, pwd string) bool {
+    return bcrypt.CompareHashAndPassword([]byte(encrPwd), []byte(pwd)) == nil
+}
