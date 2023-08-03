@@ -3,6 +3,7 @@ package api
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"time"
 
@@ -37,7 +38,7 @@ func (h *AuthHandler) HandleAuthenticate(c *fiber.Ctx) error {
     var authParams AuthParams
 
     if err := c.BodyParser(&authParams); err != nil {
-        return c.JSON(err)
+        return c.Status(http.StatusUnauthorized).JSON(err)
     }
 
     fmt.Println(authParams)
@@ -45,19 +46,22 @@ func (h *AuthHandler) HandleAuthenticate(c *fiber.Ctx) error {
 
     if err != nil {
         if errors.Is(err, mongo.ErrNoDocuments) {
-            return fmt.Errorf("invalid authentication")
+            errMsg := map[string]string{"error": "credential invalid"}
+            return c.Status(http.StatusUnauthorized).JSON(errMsg)
         }
-        return c.JSON(err)
+        return c.Status(http.StatusUnauthorized).JSON(err)
     }
 
     if !customtypes.IsPasswordValid(user.Password, authParams.Password) {
-        return fmt.Errorf("invalid authentication")
+        err = fmt.Errorf("invalid authentication")
+        return c.Status(http.StatusUnauthorized).JSON(err)
     }
 
     token := createTokenFromUser(user)
     
     if token == "" {
-        return fmt.Errorf("internal server error")
+        err = fmt.Errorf("internal server error")
+        return c.Status(http.StatusUnauthorized).JSON(err)
     }
 
     resp := AuthResponse{
@@ -65,7 +69,7 @@ func (h *AuthHandler) HandleAuthenticate(c *fiber.Ctx) error {
         Token: token,
     }
 
-    return c.JSON(resp)
+    return c.Status(http.StatusOK).JSON(resp)
 }
 
 func createTokenFromUser(user *customtypes.User) string {
