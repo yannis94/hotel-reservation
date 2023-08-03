@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -17,15 +18,18 @@ func JWTAuthentication(c *fiber.Ctx) error {
         return c.JSON(map[string]string{"message": "unauthorized"})
     }
 
-    fmt.Println(token)
-    if err := parseJWTToken(token); err != nil {
+    claims, err := validateToken(token) 
+
+    if err != nil {
         return err
     }
 
-    return nil
+    fmt.Println("token claims:", claims)
+
+    return c.Next()
 }
 
-func parseJWTToken(tokenStr string) error {
+func validateToken(tokenStr string) (jwt.MapClaims, error) {
     token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
         if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
             fmt.Println("Invalid signion method", token.Header["alg"])
@@ -37,11 +41,14 @@ func parseJWTToken(tokenStr string) error {
     })
 
     if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-        fmt.Println(claims)
+        return claims, nil
     }
     if err != nil {
+        if errors.Is(err, jwt.ErrTokenExpired) {
+            return nil, fmt.Errorf("token expired")
+        }
         fmt.Println("fail parse token", err)
-        return fmt.Errorf("unauthorized")
+        return nil, fmt.Errorf("unauthorized")
     }
-    return fmt.Errorf("unauthorized")
+    return nil, fmt.Errorf("unauthorized")
 }

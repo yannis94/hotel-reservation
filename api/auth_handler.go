@@ -74,8 +74,8 @@ func createTokenFromUser(user *customtypes.User) string {
     claims := jwt.MapClaims{
         "id": user.ID,
         "email": user.Email,
-        "iat": now,
-        "exp": expireAt,
+        "iat": now.Unix(),
+        "exp": expireAt.Unix(),
     }
     tkn := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
