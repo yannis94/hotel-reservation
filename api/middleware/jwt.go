@@ -25,14 +25,15 @@ func JWTAuthentication(c *fiber.Ctx) error {
     }
 
     userID, ok := claims["id"].(string)
+    isAdmin, ok := claims["admin"].(bool)
 
     if !ok {
         fmt.Printf("%+v\n", claims)
-        fmt.Println(userID)
         return c.Status(http.StatusInternalServerError).JSON(fmt.Errorf("internal server error"))
     }
 
     c.Context().SetUserValue("user_id", userID)
+    c.Context().SetUserValue("admin", isAdmin)
 
     return c.Next()
 }
