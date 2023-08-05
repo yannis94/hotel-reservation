@@ -6,10 +6,12 @@ const (
     userColl = "users"
     hotelColl = "hotels"
     roomColl = "rooms"
+    bookingColl = "bookings"
 )
 
 type Store struct {
     User UserStore
     Hotel HotelStore
     Room RoomStore
+    Booking BookingStore
 }

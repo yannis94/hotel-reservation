@@ -3,6 +3,7 @@ package middleware
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 
 	"github.com/gofiber/fiber/v2"
@@ -11,7 +12,6 @@ import (
 
 func JWTAuthentication(c *fiber.Ctx) error {
     fmt.Println("JWT token")
-
     token, ok := c.GetReqHeaders()["X-Api-Access-Token"]
 
     if !ok {
@@ -21,10 +21,18 @@ func JWTAuthentication(c *fiber.Ctx) error {
     claims, err := validateToken(token) 
 
     if err != nil {
-        return err
+        return c.JSON(map[string]string{"message": "unauthorized"})
     }
 
-    fmt.Println("token claims:", claims)
+    userID, ok := claims["id"].(string)
+
+    if !ok {
+        fmt.Printf("%+v\n", claims)
+        fmt.Println(userID)
+        return c.Status(http.StatusInternalServerError).JSON(fmt.Errorf("internal server error"))
+    }
+
+    c.Context().SetUserValue("user_id", userID)
 
     return c.Next()
 }

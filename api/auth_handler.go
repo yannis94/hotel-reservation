@@ -78,6 +78,7 @@ func createTokenFromUser(user *customtypes.User) string {
     claims := jwt.MapClaims{
         "id": user.ID,
         "email": user.Email,
+        "admin": user.IsAdmin,
         "iat": now.Unix(),
         "exp": expireAt.Unix(),
     }
